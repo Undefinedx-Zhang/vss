@@ -1,0 +1,180 @@
+# 训练配置文件 - 确保不同方法的训练参数一致性
+# 基于原始论文的推荐设置，保证公平比较
+
+# Cityscapes 数据集配置
+cityscapes:
+  # 通用训练参数
+  epochs: 100
+  batch_size: 8
+  lr: 0.01
+  weight_decay: 1e-4
+  scheduler: "poly"
+  num_workers: 4
+  
+  # 数据增强参数
+  input_size: [512, 1024]
+  random_crop: true
+  random_flip: true
+  
+  # 不同模型的特定设置
+  models:
+    deeplabv3_resnet50:
+      lr: 0.01
+      epochs: 100
+      batch_size: 8
+    
+    deeplabv3_resnet101:
+      lr: 0.007  # 更深网络使用稍小学习率
+      epochs: 120
+      batch_size: 6  # 减小batch size适应更大模型
+    
+    fcn_resnet50:
+      lr: 0.01
+      epochs: 100
+      batch_size: 8
+    
+    fcn_resnet101:
+      lr: 0.007
+      epochs: 120
+      batch_size: 6
+    
+    resnet50_seg:
+      lr: 0.01
+      epochs: 80  # 简单头部收敛更快
+      batch_size: 12
+    
+    resnet101_seg:
+      lr: 0.007
+      epochs: 100
+      batch_size: 8
+    
+    simple_segnet:
+      lr: 0.1    # 从头训练需要更大学习率
+      epochs: 200
+      batch_size: 16
+    
+    unet:
+      lr: 0.1
+      epochs: 200
+      batch_size: 16
+
+# CamVid 数据集配置  
+camvid:
+  # 通用训练参数
+  epochs: 200
+  batch_size: 16
+  lr: 0.01
+  weight_decay: 1e-4
+  scheduler: "poly"
+  num_workers: 4
+  
+  # 数据增强参数
+  input_size: [360, 480]
+  random_crop: true
+  random_flip: true
+  
+  # 不同模型的特定设置
+  models:
+    deeplabv3_resnet50:
+      lr: 0.01
+      epochs: 200
+      batch_size: 16
+    
+    deeplabv3_resnet101:
+      lr: 0.007
+      epochs: 240
+      batch_size: 12
+    
+    simple_segnet:
+      lr: 0.1
+      epochs: 300
+      batch_size: 32
+
+
+
+
+
+# 剪枝方法特定的训练配置
+pruning_methods:
+  # Network Slimming 需要L1正则化
+  slimming:
+    slimming_lambda: 1e-4
+    # 建议训练更多轮次让BN参数充分稀疏化
+    extra_epochs: 20
+  
+  # DMCP 需要两阶段训练
+  dmcp:
+    stage1_epochs: 100  # 正常训练
+    stage2_epochs: 50   # DMCP训练
+    dmcp_lambda: 0.1
+  
+  # 其他方法使用标准训练
+  taylor:
+    # 标准训练即可
+  fpgm:
+    # 标准训练即可
+  fgp:
+    # 需要保存训练数据用于重要性分析
+    save_train_features: true
+  sirfp:
+    # 需要保存训练数据用于重要性分析
+    save_train_features: true
+
+
+
+
+# 微调配置 (剪枝后)
+finetuning:
+  cityscapes:
+    epochs: 50
+    lr: 0.005  # 剪枝后使用较小学习率
+    batch_size: 8
+    scheduler: "poly"
+    weight_decay: 1e-4
+  
+  camvid:
+    epochs: 100
+    lr: 0.005
+    batch_size: 16
+    scheduler: "poly"
+    weight_decay: 1e-4
+
+# 评测配置
+evaluation:
+  batch_size: 4
+  num_workers: 4
+  oracle_samples: 32
+  
+  # 不同数据集的输入尺寸
+  input_sizes:
+    cityscapes: [512, 1024]
+    camvid: [360, 480]
+
+# 基准测试配置
+benchmark:
+  # 推荐的剪枝比例范围
+  ratios: [0.1, 0.2, 0.3, 0.4, 0.5]
+  
+  # 快速测试的比例
+  quick_ratios: [0.2, 0.3, 0.5]
+  
+  # 完整测试的比例  
+  full_ratios: [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.6, 0.7]
+  
+  # 推荐的方法组合
+  method_groups:
+    basic: ["taylor", "fpgm", "l1", "l2", "random"]
+    advanced: ["taylor", "slimming", "fpgm", "fgp", "sirfp"]
+    full: ["taylor", "slimming", "fpgm", "l1", "l2", "random", "dmcp", "fgp", "sirfp"]
+
+# 硬件配置建议
+hardware:
+  cityscapes:
+    min_gpu_memory: "8GB"
+    recommended_gpu_memory: "12GB"
+    min_system_memory: "16GB"
+    
+  camvid:
+    min_gpu_memory: "4GB" 
+    recommended_gpu_memory: "8GB"
+    min_system_memory: "8GB"

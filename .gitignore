@@ -1,0 +1,25 @@
+# 排除不需要上传的文件夹
+logs/
+runs/
+model_cache/
+datasets/
+
+# 排除常见的临时文件
+*.pyc
+__pycache__/
+*.so
+*.egg-info/
+.pytest_cache/
+.coverage
+.DS_Store
+*.swp
+*.swo
+*~
+
+# 排除IDE相关文件
+.vscode/
+.idea/
+*.iml
+
+# 排除系统文件
+Thumbs.db
